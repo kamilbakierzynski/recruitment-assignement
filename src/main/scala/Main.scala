@@ -10,7 +10,7 @@ import com.typesafe.config.ConfigFactory
 // Case classes for messaging
 // Message for boss with the path of the image to check
 case class Path(path: String)
-// Message for worker with the read image + specified settings
+// Message for worker with the path to image + specified settings
 case class Photo(path: String, threshold: Int, outPath: String)
 // Initial message to boss with program settings
 case class Settings(threshold: Int, outPath: String)
