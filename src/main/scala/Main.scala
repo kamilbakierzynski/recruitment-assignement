@@ -55,39 +55,37 @@ class Boss extends Actor {
 class Worker extends Actor {
   def receive: Receive = {
     case Photo(path, threshold, outPath) =>
-      val photo = ImageIO.read(new File(path))
-      /* Calculates what is the max value of the all white photo. I uses it for reference to calculate
-      *  percentage of "whiteness" */
-      val pixelCount = photo.getWidth * photo.getHeight
-
-      // Gets average (in percentage) of Value from RGB to HSV conversion
-      val sum = calculatePixels(photo)
-
-      /* Switches the scale to all black
-      *  calculates the percentage of the "whiteness" of the image
-      *  subtracts it from 1.0 to get the "darkness */
-      val darkVal = 100 - (sum * 1.0 / pixelCount)
-
-      // Rounds result to get two digits
-      val result = Math.round(darkVal).toInt
-
-      /* Gets format of the original file + the path and name to save it
-      *  namesToSave is a tuple containing on ._1 - PATH to save image and on ._2 format of original */
-      val namesToSave = prepareName(context.self.path.name, threshold, result, outPath)
-
       try {
+        val photo = ImageIO.read(new File(path))
+        // Gets the number of pixels in the image
+        val pixelCount = photo.getWidth * photo.getHeight
+
+        // Gets average (in percentage) of Value from RGB to HSV conversion
+        val sum = calculatePixels(photo)
+
+        /* Switches the scale to all black
+        *  calculates the percentage of the "brightness" of the image
+        *  subtracts it from 100 to get the "darkness */
+        val darkVal = 100 - (sum * 1.0 / pixelCount)
+
+        // Rounds result to get two digits
+        val result = Math.round(darkVal).toInt
+
+        /* Gets format of the original file + the path and name to save it
+        *  namesToSave is a tuple containing on ._1 - PATH to save image and on ._2 format of original */
+        val namesToSave = prepareName(context.self.path.name, threshold, result, outPath)
+
         // Saves the file that it was taking care of
         ImageIO.write(photo, namesToSave._2, new File(namesToSave._1))
+        // Declares finished job to the boss, sends path to display in console
+        sender() ! Finish(namesToSave._1)
+
+        // Stops working
+        context.stop(self)
       } catch {
-        case exception: IOException => println(s"IOException:\n $exception")
+        case exception: IOException => println(s"IOException\n $exception")
         case exception: Exception => println(s"UndefinedException:\n $exception")
       }
-      // Declares finished job to the boss, sends path to display in console
-      sender() ! Finish(namesToSave._1)
-
-      // Stops working
-      context.stop(self)
-
   }
   // Tailrec function to iterate over every pixel of an image and calculate sum of the values
   def calculatePixels(photo: BufferedImage): Double = {
