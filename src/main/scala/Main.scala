@@ -33,7 +33,6 @@ class Boss extends Actor {
 
     // Receives path of an image to check
     case Path(path) =>
-      // Opens image from the provided path
       // Gets the name of the file to name worker properly
       val name = path.split("\\\\").last
       val worker = context.actorOf(Props[Worker], name = name)
@@ -56,6 +55,7 @@ class Worker extends Actor {
   def receive: Receive = {
     case Photo(path, threshold, outPath) =>
       try {
+        // Opens image from the provided path
         val photo = ImageIO.read(new File(path))
         // Gets the number of pixels in the image
         val pixelCount = photo.getWidth * photo.getHeight
